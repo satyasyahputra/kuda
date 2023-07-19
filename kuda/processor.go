@@ -3,17 +3,32 @@ package kuda
 import (
 	"os"
 	"os/signal"
-	"reflect"
 
 	"github.com/gocraft/work"
+	"github.com/gomodule/redigo/redis"
 )
+
+type KudaProcessor struct {
+	qName       string
+	concurrency uint
+	redisPool   *redis.Pool
+	jobMap      map[string]interface{}
+	middlewares func(pool *work.WorkerPool)
+}
 
 type ProcessorContext struct {
 	args string
 }
 
-type KudaWorkerPool struct {
-	pool *work.WorkerPool
+func NewKudaProcessor(qName string, concurrency uint, redisPool *redis.Pool, jobMap map[string]interface{}, middlewares func(pool *work.WorkerPool)) *KudaProcessor {
+	processor := &KudaProcessor{
+		qName:       qName,
+		concurrency: concurrency,
+		redisPool:   redisPool,
+		jobMap:      jobMap,
+		middlewares: middlewares,
+	}
+	return processor
 }
 
 func CreateKudaProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
@@ -21,7 +36,7 @@ func CreateKudaProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
 
 	registerJobs(pool, kudaProcessor.jobMap)
 
-	registerMiddleware(pool, kudaProcessor.middlewares)
+	kudaProcessor.middlewares(pool)
 
 	return pool
 }
@@ -58,14 +73,6 @@ func registerJobs(pool *work.WorkerPool, jobMap map[string]interface{}) error {
 	for jobName, fn := range jobMap {
 		pool.Job(jobName, fn)
 	}
-	return nil
-}
-
-func registerMiddleware(pool *work.WorkerPool, fn interface{}) error {
-	value := reflect.ValueOf(fn)
-	in := make([]reflect.Value, 1)
-	in[0] = reflect.ValueOf(pool)
-	value.Call(in)
 	return nil
 }
 
