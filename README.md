@@ -12,7 +12,7 @@ import (
 
 	"github.com/gocraft/work"
 	"github.com/gomodule/redigo/redis"
-	"github.com/kuda/kuda"
+	"github.com/satyasyahputra/kuda/kuda"
 )
 
 var redisPool = &redis.Pool{

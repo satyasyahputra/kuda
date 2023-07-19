@@ -1,4 +1,4 @@
-module github.com/kuda
+module github.com/satyasyahputra/kuda
 
 go 1.20
 
