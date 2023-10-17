@@ -15,8 +15,7 @@ type KudaRedis struct {
 	MaxActive int    `env:"MAX_ACTIVE" envDefault:"5"`
 	MaxIdle   int    `env:"MAX_IDLE" envDefault:"5"`
 	Wait      bool   `env:"WAIT" envDefault:"true"`
-	Host      string `env:"HOST" envDefault:"localhost"`
-	Port      string `env:"PORT" envDefault:"6379"`
+	Endpoint  string `env:"ENDPOINT" envDefault:"localhost:6379"`
 }
 
 func (kr *KudaRedis) NewRedisPool() *redis.Pool {
@@ -25,7 +24,7 @@ func (kr *KudaRedis) NewRedisPool() *redis.Pool {
 		MaxIdle:   kr.MaxIdle,
 		Wait:      kr.Wait,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", kr.Host+":"+kr.Port)
+			return redis.Dial("tcp", kr.Endpoint)
 		},
 	}
 }

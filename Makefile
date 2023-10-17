@@ -1,3 +1,6 @@
+include .env
+export
+
 tidy:
 	@go mod tidy
 
