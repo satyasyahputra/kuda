@@ -41,18 +41,6 @@ func CreateKudaProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
 	return pool
 }
 
-func SimpleProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
-	pool := work.NewWorkerPool(ProcessorContext{}, kudaProcessor.concurrency, kudaProcessor.qName, kudaProcessor.redisPool)
-
-	ProcessorMiddleware(pool)
-
-	registerJobs(pool, kudaProcessor.jobMap)
-
-	customizeOptions(pool)
-
-	return pool
-}
-
 func RunProcessors(pools []*work.WorkerPool) {
 	for _, wp := range pools {
 		go RunProcessor(wp)
