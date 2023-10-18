@@ -1,4 +1,4 @@
-package example_worker
+package my_worker
 
 import (
 	"log"

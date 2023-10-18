@@ -1,23 +1,25 @@
 package kuda
 
 import (
-	"errors"
-
 	"github.com/gocraft/work"
 	"github.com/gomodule/redigo/redis"
 )
 
 var enqueuers = map[string]*work.Enqueuer{}
 
-func RegisterEnqueuer(name string, redisPool *redis.Pool) (*work.Enqueuer, error) {
-	enqueuers[name] = work.NewEnqueuer(name, redisPool)
-	return enqueuers[name], nil
+type KudaEnqueuerContext struct {
+	RedisPool *redis.Pool
+	Enqueuers map[string]*work.Enqueuer
 }
 
-func GetEnqueuer(name string) (*work.Enqueuer, error) {
-	nQR, exist := enqueuers[name]
-	if !exist {
-		return nil, errors.New("Enqueuer not found: " + name)
+func NewKudaEnqueuerContext(rp *redis.Pool, queues []string) *KudaEnqueuerContext {
+	enqueuersMap := map[string]*work.Enqueuer{}
+	for _, name := range queues {
+		enqueuersMap[name] = work.NewEnqueuer(name, redisPool)
 	}
-	return nQR, nil
+
+	return &KudaEnqueuerContext{
+		RedisPool: rp,
+		Enqueuers: enqueuersMap,
+	}
 }

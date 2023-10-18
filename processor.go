@@ -1,6 +1,7 @@
 package kuda
 
 import (
+	"log"
 	"os"
 	"os/signal"
 
@@ -9,10 +10,8 @@ import (
 )
 
 type KudaProcessor struct {
-	qName       string
 	concurrency uint
 	redisPool   *redis.Pool
-	jobMap      map[string]interface{}
 	middlewares func(pool *work.WorkerPool)
 }
 
@@ -20,21 +19,19 @@ type ProcessorContext struct {
 	args string
 }
 
-func NewKudaProcessor(qName string, concurrency uint, redisPool *redis.Pool, jobMap map[string]interface{}, middlewares func(pool *work.WorkerPool)) *KudaProcessor {
+func NewKudaProcessor(concurrency uint, redisPool *redis.Pool, middlewares func(pool *work.WorkerPool)) *KudaProcessor {
 	processor := &KudaProcessor{
-		qName:       qName,
 		concurrency: concurrency,
 		redisPool:   redisPool,
-		jobMap:      jobMap,
 		middlewares: middlewares,
 	}
 	return processor
 }
 
-func CreateKudaProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
-	pool := work.NewWorkerPool(ProcessorContext{}, kudaProcessor.concurrency, kudaProcessor.qName, kudaProcessor.redisPool)
+func CreateKudaProcessor(kudaProcessor *KudaProcessor, qName string, jobMap map[string]func(pc *ProcessorContext, job *work.Job) error) *work.WorkerPool {
+	pool := work.NewWorkerPool(ProcessorContext{}, kudaProcessor.concurrency, qName, kudaProcessor.redisPool)
 
-	registerJobs(pool, kudaProcessor.jobMap)
+	registerJobs(pool, jobMap)
 
 	kudaProcessor.middlewares(pool)
 
@@ -43,7 +40,16 @@ func CreateKudaProcessor(kudaProcessor *KudaProcessor) *work.WorkerPool {
 
 func RunProcessors(pools []*work.WorkerPool) {
 	for _, wp := range pools {
-		go RunProcessor(wp)
+		wp.Start()
+	}
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	<-signalChan
+
+	for _, wp := range pools {
+		log.Println("stop")
+		wp.Stop()
 	}
 }
 
@@ -57,16 +63,14 @@ func RunProcessor(pool *work.WorkerPool) {
 	pool.Stop()
 }
 
-func registerJobs(pool *work.WorkerPool, jobMap map[string]interface{}) error {
+func registerJobs(pool *work.WorkerPool, jobMap map[string]func(pc *ProcessorContext, job *work.Job) error) {
 	for jobName, fn := range jobMap {
 		pool.Job(jobName, fn)
 	}
-	return nil
 }
 
-func customizeOptions(pool *work.WorkerPool) error {
+func customizeOptions(pool *work.WorkerPool) {
 	pool.JobWithOptions("export", work.JobOptions{Priority: 10, MaxFails: 5}, (*ProcessorContext).Export)
-	return nil
 }
 
 func (c *ProcessorContext) Export(job *work.Job) error {

@@ -2,26 +2,29 @@ package main
 
 import (
 	"github.com/caarlos0/env/v9"
+	"github.com/gocraft/work"
 	"github.com/satyasyahputra/kuda"
-	"github.com/satyasyahputra/kuda/workers/example_worker"
+	"github.com/satyasyahputra/kuda/workers/my_worker"
 )
 
 func main() {
 	kr := loadEnv()
 	redisPool := kr.NewRedisPool()
-	queue := "example"
+	queues := []string{"my_queue"}
 
-	enqeueuer, _ := kuda.RegisterEnqueuer(queue, redisPool)
-	enqeueuer.Enqueue("example_worker", nil)
-
-	jobMap := map[string]interface{}{
-		"example_worker": example_worker.Run,
+	jobMap := map[string]func(c *kuda.ProcessorContext, job *work.Job) error{
+		"my_worker": my_worker.Run,
 	}
 
-	customKudaProcessor := kuda.NewKudaProcessor(queue, 10, redisPool, jobMap, kuda.ProcessorMiddleware)
-	custom_pool := kuda.CreateKudaProcessor(customKudaProcessor)
+	kudaProcessor := kuda.NewKudaProcessor(10, redisPool, kuda.ProcessorMiddleware)
+	processors := []*work.WorkerPool{}
 
-	kuda.RunProcessor(custom_pool)
+	for _, queue := range queues {
+		custom_pool := kuda.CreateKudaProcessor(kudaProcessor, queue, jobMap)
+		processors = append(processors, custom_pool)
+	}
+
+	kuda.RunProcessors(processors)
 }
 
 func loadEnv() kuda.KudaRedis {
