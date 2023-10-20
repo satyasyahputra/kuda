@@ -7,19 +7,36 @@ import (
 )
 
 func main() {
-	kr := loadEnv()
-	redisPool := kr.NewRedisPool()
+	appConfig := loadEnv()
+	redisPool := appConfig.kr.NewRedisPool()
 	queues := []string{"my_queue"}
 	r := mux.NewRouter()
 	kec := kuda.NewKudaEnqueuerContext(redisPool, queues)
-	khc := kuda.NewKudaHttp(r, kec)
-	khc.StartHttp()
+	khc := &appConfig.khc
+
+	khc.Router(r).
+		Enqueuer(kec).
+		DefaultRoutes().
+		StartHttp()
+
 }
 
-func loadEnv() kuda.KudaRedis {
+type appConfig struct {
+	kr  kuda.KudaRedis
+	khc kuda.KudaHttpContext
+}
+
+func loadEnv() appConfig {
 	kr := kuda.KudaRedis{}
+	khc := kuda.KudaHttpContext{}
 	if err := env.ParseWithOptions(&kr, env.Options{Prefix: "KUDA_REDIS_"}); err != nil {
 		panic(err)
 	}
-	return kr
+	if err := env.ParseWithOptions(&khc, env.Options{Prefix: "KUDA_API_"}); err != nil {
+		panic(err)
+	}
+	return appConfig{
+		kr:  kr,
+		khc: khc,
+	}
 }

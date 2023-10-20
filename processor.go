@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/gocraft/work"
 	"github.com/gomodule/redigo/redis"
@@ -44,7 +45,7 @@ func RunProcessors(pools []*work.WorkerPool) {
 	}
 
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	<-signalChan
 
 	for _, wp := range pools {
@@ -57,7 +58,7 @@ func RunProcessor(pool *work.WorkerPool) {
 	pool.Start()
 
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	<-signalChan
 
 	pool.Stop()

@@ -5,8 +5,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-var enqueuers = map[string]*work.Enqueuer{}
-
 type KudaEnqueuerContext struct {
 	RedisPool *redis.Pool
 	Enqueuers map[string]*work.Enqueuer
