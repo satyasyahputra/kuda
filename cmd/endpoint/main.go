@@ -9,16 +9,15 @@ import (
 func main() {
 	appConfig := loadEnv()
 	redisPool := appConfig.kr.NewRedisPool()
-	queues := []string{"my_queue"}
+	queues := []string{"my_queue:10", "your_queue:10"}
 	r := mux.NewRouter()
-	kec := kuda.NewKudaEnqueuerContext(redisPool, queues)
+	kec, _ := kuda.NewKudaEnqueuerContext(redisPool, queues)
 	khc := &appConfig.khc
 
 	khc.Router(r).
 		Enqueuer(kec).
 		DefaultRoutes().
 		StartHttp()
-
 }
 
 type appConfig struct {

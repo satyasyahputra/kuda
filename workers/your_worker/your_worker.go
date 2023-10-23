@@ -1,4 +1,4 @@
-package my_worker
+package your_worker
 
 import (
 	"log"
@@ -7,11 +7,10 @@ import (
 )
 
 func Alias() string {
-	return "my_worker"
+	return "your_worker"
 }
 
 func Run(job *work.Job) error {
-
-	log.Printf("MyWorkerArgs: %v", job.Args)
+	log.Println("common notify working")
 	return nil
 }

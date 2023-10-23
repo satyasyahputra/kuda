@@ -1,9 +1,12 @@
 package kuda
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
+	"github.com/gocraft/work"
 	"github.com/gorilla/mux"
 )
 
@@ -15,7 +18,7 @@ type KudaHttpContext struct {
 }
 
 func (khc *KudaHttpContext) DefaultRoutes() *KudaHttpContext {
-	khc.router.Path("/enqueue").Methods("GET").HandlerFunc(enqueue(khc.kec))
+	khc.router.Path("/enqueue").Methods("POST").HandlerFunc(enqueue(khc.kec))
 	return khc
 }
 
@@ -37,7 +40,27 @@ func (khc *KudaHttpContext) StartHttp() {
 
 func enqueue(kec *KudaEnqueuerContext) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		kec.Enqueuers["my_queue"].Enqueue("my_worker", map[string]interface{}{})
-		w.Write([]byte{})
+		pc := ProcessorContext{}
+		err := DecodeJSON(&pc, r.Body, w)
+		if err != nil {
+			return
+		}
+
+		args := work.Q{}
+		err = json.NewDecoder(strings.NewReader(pc.Args)).Decode(&args)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		job, err := kec.Enqueuers[pc.Queue].Enqueue(pc.Worker, args)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "job": job})
 	}
 }

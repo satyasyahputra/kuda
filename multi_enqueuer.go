@@ -10,14 +10,18 @@ type KudaEnqueuerContext struct {
 	Enqueuers map[string]*work.Enqueuer
 }
 
-func NewKudaEnqueuerContext(rp *redis.Pool, queues []string) *KudaEnqueuerContext {
+func NewKudaEnqueuerContext(rp *redis.Pool, queues []string) (*KudaEnqueuerContext, error) {
 	enqueuersMap := map[string]*work.Enqueuer{}
-	for _, name := range queues {
-		enqueuersMap[name] = work.NewEnqueuer(name, redisPool)
+	for _, queue := range queues {
+		q, _, err := ExtractQueue(queue)
+		if err != nil {
+			return nil, err
+		}
+		enqueuersMap[q] = work.NewEnqueuer(q, redisPool)
 	}
 
 	return &KudaEnqueuerContext{
 		RedisPool: rp,
 		Enqueuers: enqueuersMap,
-	}
+	}, nil
 }
