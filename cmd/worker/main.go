@@ -7,6 +7,7 @@ import (
 	"github.com/caarlos0/env/v9"
 	"github.com/gocraft/work"
 	"github.com/satyasyahputra/kuda"
+	"github.com/satyasyahputra/kuda/workers/http_worker"
 	"github.com/satyasyahputra/kuda/workers/my_worker"
 )
 
@@ -16,7 +17,8 @@ func main() {
 	queues := strings.Split(q.Queues, ",")
 
 	jobMap := map[string]func(job *work.Job) error{
-		my_worker.Alias(): my_worker.Run,
+		my_worker.Alias():   my_worker.Run,
+		http_worker.Alias(): http_worker.Run,
 	}
 
 	kudaProcessor := kuda.NewKudaProcessor(redisPool, kuda.ProcessorMiddleware)
