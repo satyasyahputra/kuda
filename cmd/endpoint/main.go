@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/caarlos0/env/v9"
 	"github.com/gorilla/mux"
 	"github.com/satyasyahputra/kuda"
@@ -9,7 +11,7 @@ import (
 func main() {
 	appConfig := loadEnv()
 	redisPool := appConfig.kr.NewRedisPool()
-	queues := []string{"my_queue:10", "your_queue:10"}
+	queues := strings.Split(appConfig.kq.Queues, ",")
 	r := mux.NewRouter()
 	kec, _ := kuda.NewKudaEnqueuerContext(redisPool, queues)
 	khc := &appConfig.khc
@@ -23,19 +25,26 @@ func main() {
 type appConfig struct {
 	kr  kuda.KudaRedis
 	khc kuda.KudaHttpContext
+	kq  kuda.KudaQueue
 }
 
 func loadEnv() appConfig {
 	kr := kuda.KudaRedis{}
 	khc := kuda.KudaHttpContext{}
+	kq := kuda.KudaQueue{}
+
 	if err := env.ParseWithOptions(&kr, env.Options{Prefix: "KUDA_REDIS_"}); err != nil {
 		panic(err)
 	}
 	if err := env.ParseWithOptions(&khc, env.Options{Prefix: "KUDA_API_"}); err != nil {
 		panic(err)
 	}
+	if err := env.ParseWithOptions(&kq, env.Options{Prefix: "KUDA_"}); err != nil {
+		panic(err)
+	}
 	return appConfig{
 		kr:  kr,
 		khc: khc,
+		kq:  kq,
 	}
 }

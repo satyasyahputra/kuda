@@ -1,5 +1,5 @@
 include .env
-export
+export 
 
 tidy:
 	@go mod tidy
