@@ -2,15 +2,6 @@ package kuda
 
 import "github.com/gomodule/redigo/redis"
 
-var redisPool = &redis.Pool{
-	MaxActive: 5,
-	MaxIdle:   5,
-	Wait:      true,
-	Dial: func() (redis.Conn, error) {
-		return redis.Dial("tcp", "localhost:6379")
-	},
-}
-
 type KudaRedis struct {
 	MaxActive int    `env:"MAX_ACTIVE" envDefault:"5"`
 	MaxIdle   int    `env:"MAX_IDLE" envDefault:"5"`

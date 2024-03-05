@@ -1,7 +1,7 @@
 package kuda
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/gocraft/work"
 )
@@ -11,6 +11,6 @@ func ProcessorMiddleware(pool *work.WorkerPool) {
 }
 
 func (c *ProcessorContext) log(job *work.Job, next work.NextMiddlewareFunc) error {
-	fmt.Println("Starting job: ", job.Name)
+	log.Println("Starting job: ", job.Name)
 	return next()
 }

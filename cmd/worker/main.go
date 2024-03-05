@@ -13,9 +13,9 @@ import (
 )
 
 func main() {
-	kr, q := loadEnv()
-	redisPool := kr.NewRedisPool()
-	queues := strings.Split(q.Queues, ",")
+	config := loadEnv()
+	redisPool := config.kr.NewRedisPool()
+	queues := strings.Split(config.q.Queues, ",")
 
 	jobMap := map[string]func(job *work.Job) error{
 		my_worker.Alias():   my_worker.Run,
@@ -38,7 +38,12 @@ func main() {
 	kuda.RunProcessors(processors)
 }
 
-func loadEnv() (kuda.KudaRedis, kuda.KudaQueue) {
+type config struct {
+	kr *kuda.KudaRedis
+	q  *kuda.KudaQueue
+}
+
+func loadEnv() *config {
 	kr := kuda.KudaRedis{}
 	if err := env.ParseWithOptions(&kr, env.Options{Prefix: "KUDA_REDIS_"}); err != nil {
 		panic(err)
@@ -47,5 +52,8 @@ func loadEnv() (kuda.KudaRedis, kuda.KudaQueue) {
 	if err := env.ParseWithOptions(&q, env.Options{Prefix: "KUDA_"}); err != nil {
 		panic(err)
 	}
-	return kr, q
+	return &config{
+		kr: &kr,
+		q:  &q,
+	}
 }

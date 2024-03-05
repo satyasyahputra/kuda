@@ -4,6 +4,9 @@ export
 tidy:
 	@go mod tidy
 
+compose:
+	docker compose up -d
+
 worker:
 	@go run ./cmd/worker/main.go
 
